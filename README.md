@@ -23,7 +23,8 @@ las instrucciones.
 
 ## Bancos incluidos en el seed inicial
 
-Fuentes verificadas manualmente (agosto 2026) — pueden cambiar de URL o
+Fuentes localizadas por búsqueda web (agosto 2026) — **no verificadas por
+carga directa**, ver "Limitaciones conocidas" abajo. Pueden cambiar de URL o
 estructura con el tiempo, ajustables vía la API de administración:
 
 - Banco General — `bgeneral.com/personas/promociones/`
@@ -33,6 +34,11 @@ estructura con el tiempo, ajustables vía la API de administración:
 - Banesco — `banesco.com.pa/promociones/quitate-un-peso-de-encima/`
 - Caja de Ahorros — `cajadeahorros.com.pa/promocion/compramos-tu-saldo/`
 - Multibank — `multibank.com.pa/es/personas/compra-de-saldo`
+- Citibank Panamá — `citibank.com.pa/panama/bancaPersonal/tarjetasDeCredito/CompraSaldo.htm`
+- MetroBank — `metrobanksa.com/compra-de-saldo-0-a-12-meses/`
+- Mercantil Banco Panamá — `mercantilbanco.com.pa/personas/tarjetas/compra-de-saldo`
+- Davivienda (antes Scotiabank Panamá — su banca de personas en Panamá pasó a
+  la marca DAVIbank tras la adquisición) — `davibank.pa/es/banca-personal/productos-complementarios/compra-de-saldo.html`
 
 ## Setup
 
@@ -77,8 +83,18 @@ npm run scrape
 Para crear el primer usuario admin: regístralo normalmente vía `/auth/register`
 y luego actualiza su `role` a `'admin'` directamente en la base de datos.
 
-## Notas
+## Limitaciones conocidas
 
+- **Bloqueo de bots**: varios sitios de bancos panameños devuelven `403` a
+  clientes automatizados (WAF/Cloudflare/Akamai). El scraper ya envía un
+  `User-Agent` de navegador (`src/services/scraperService.js`), pero eso no
+  garantiza pasar todos los filtros — si un banco sigue devolviendo `403` en
+  producción, revísalo por separado (puede necesitar un navegador headless
+  tipo Playwright, o quedar fuera del scraping automático y depender de
+  revisión manual periódica vía la API de admin).
+- Las URLs y fuentes del seed se localizaron por búsqueda web, no cargando
+  cada página directamente — pueden estar desactualizadas o haber cambiado.
+  Verifica cada una antes de depender de ellas en producción.
 - El scraping depende de que los bancos no cambien radicalmente el HTML de
   sus páginas de promociones; si dejan de detectarse promos reales, revisa
   `css_selector` y `keywords` de la fuente correspondiente.

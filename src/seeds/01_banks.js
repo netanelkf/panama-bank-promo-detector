@@ -65,6 +65,44 @@ const BANKS = [
       keywords: ['compra de saldo'],
     },
   },
+  {
+    name: 'Citibank Panamá',
+    slug: 'citibank',
+    website_url: 'https://www.citibank.com.pa',
+    source: {
+      url: 'https://www.citibank.com.pa/panama/bancaPersonal/tarjetasDeCredito/CompraSaldo.htm',
+      keywords: ['compra de saldo', 'compra saldo'],
+    },
+  },
+  {
+    name: 'MetroBank',
+    slug: 'metrobank',
+    website_url: 'https://www.metrobanksa.com',
+    source: {
+      url: 'https://www.metrobanksa.com/compra-de-saldo-0-a-12-meses/',
+      keywords: ['compra de saldo'],
+    },
+  },
+  {
+    name: 'Mercantil Banco Panamá',
+    slug: 'mercantil-banco',
+    website_url: 'https://mercantilbanco.com.pa',
+    source: {
+      url: 'https://mercantilbanco.com.pa/personas/tarjetas/compra-de-saldo',
+      keywords: ['compra de saldo'],
+    },
+  },
+  {
+    // Scotiabank's retail business in Panama was acquired by Davivienda
+    // (brand "DAVIbank") — there is no independent Scotiabank Panama site.
+    name: 'Davivienda (antes Scotiabank Panamá)',
+    slug: 'davivienda',
+    website_url: 'https://www.davibank.pa',
+    source: {
+      url: 'https://www.davibank.pa/es/banca-personal/productos-complementarios/compra-de-saldo.html',
+      keywords: ['compra de saldo', 'compra saldo'],
+    },
+  },
 ];
 
 exports.seed = async function (knex) {
