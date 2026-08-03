@@ -1,0 +1,23 @@
+
+services:
+  - type: web
+    name: panama-bank-promo-detector
+    env: node
+    buildCommand: "npm install && npm run migrate"
+    startCommand: "npm start"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: panama-bank-promo-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: NODE_ENV
+        value: production
+      - key: SCRAPE_CRON
+        value: "0 */6 * * *"
+
+databases:
+  - name: panama-bank-promo-db
+    databaseName: panama_bank_promos
+    plan: free
