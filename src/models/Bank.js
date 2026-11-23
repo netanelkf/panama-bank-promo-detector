@@ -13,7 +13,12 @@ const Bank = {
 
   create: (data) => db(TABLE).insert(data).returning('*').then((rows) => rows[0]),
 
-  update: (id, data) => db(TABLE).where({ id }).update(data).returning('*').then((rows) => rows[0]),
+  update: (id, data) =>
+    db(TABLE)
+      .where({ id })
+      .update({ ...data, updated_at: db.fn.now() })
+      .returning('*')
+      .then((rows) => rows[0]),
 
   remove: (id) => db(TABLE).where({ id }).del(),
 };

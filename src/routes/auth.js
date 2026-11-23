@@ -3,7 +3,17 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
+const rateLimit = require('express-rate-limit');
 const authMiddleware = require('../middleware/auth');
+
+// Brute-force protection for credential endpoints.
+const credentialLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Too many attempts, try again later' },
+});
 
 function signToken(user) {
   return jwt.sign(
@@ -21,9 +31,10 @@ function safeUser(user) {
 // POST /auth/register
 router.post(
   '/register',
+  credentialLimiter,
   [
     body('email').isEmail().normalizeEmail(),
-    body('password').isLength({ min: 6 }),
+    body('password').isLength({ min: 8, max: 72 }),
     body('name').optional().trim().notEmpty(),
   ],
   async (req, res) => {
@@ -46,6 +57,7 @@ router.post(
 // POST /auth/login
 router.post(
   '/login',
+  credentialLimiter,
   [body('email').isEmail().normalizeEmail(), body('password').notEmpty()],
   async (req, res) => {
     const errors = validationResult(req);
@@ -71,15 +83,29 @@ router.get('/me', authMiddleware, async (req, res) => {
 });
 
 // PATCH /auth/me — update name, push token, subscription status
-router.patch('/me', authMiddleware, async (req, res) => {
-  const { name, expo_push_token, subscribed } = req.body;
-  const updates = {};
-  if (name !== undefined) updates.name = name;
-  if (expo_push_token !== undefined) updates.expo_push_token = expo_push_token;
-  if (subscribed !== undefined) updates.subscribed = Boolean(subscribed);
+router.patch(
+  '/me',
+  authMiddleware,
+  [
+    body('name').optional().isString().trim().isLength({ max: 255 }),
+    body('expo_push_token').optional({ values: 'null' }).isString().isLength({ max: 255 }),
+    body('subscribed').optional().isBoolean().toBoolean(true),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
-  const user = await User.update(req.user.userId, updates);
-  return res.json(safeUser(user));
-});
+    const { name, expo_push_token, subscribed } = req.body;
+    const updates = {};
+    if (name !== undefined) updates.name = name;
+    if (expo_push_token !== undefined) updates.expo_push_token = expo_push_token;
+    if (subscribed !== undefined) updates.subscribed = subscribed;
+    if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'No fields to update' });
+
+    const user = await User.update(req.user.userId, updates);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    return res.json(safeUser(user));
+  }
+);
 
 module.exports = router;

@@ -105,20 +105,24 @@ const BANKS = [
   },
 ];
 
+// Idempotent: upserts banks by slug and adds a source only if that URL isn't
+// already monitored for the bank. Never deletes promotion history, so it's
+// safe to re-run in production after adding banks to the list above.
 exports.seed = async function (knex) {
-  await knex('promotions').del();
-  await knex('monitored_sources').del();
-  await knex('banks').del();
-
   for (const entry of BANKS) {
     const [bank] = await knex('banks')
       .insert({ name: entry.name, slug: entry.slug, website_url: entry.website_url })
+      .onConflict('slug')
+      .merge(['name', 'website_url'])
       .returning('*');
 
-    await knex('monitored_sources').insert({
-      bank_id: bank.id,
-      url: entry.source.url,
-      keywords: JSON.stringify(entry.source.keywords),
-    });
+    const existing = await knex('monitored_sources').where({ bank_id: bank.id, url: entry.source.url }).first();
+    if (!existing) {
+      await knex('monitored_sources').insert({
+        bank_id: bank.id,
+        url: entry.source.url,
+        keywords: JSON.stringify(entry.source.keywords),
+      });
+    }
   }
 };

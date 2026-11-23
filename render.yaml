@@ -16,6 +16,8 @@ services:
         value: production
       - key: SCRAPE_CRON
         value: "0 */6 * * *"
+      - key: SCRAPE_TZ
+        value: America/Panama
 
 databases:
   - name: panama-bank-promo-db

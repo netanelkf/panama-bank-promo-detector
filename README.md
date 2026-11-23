@@ -12,14 +12,21 @@ las instrucciones.
    (`monitored_sources`): una URL de su sitio + una lista de palabras clave
    (ej. `"compra de saldo"`).
 2. Un job programado (`node-cron`, configurable con `SCRAPE_CRON`) recorre
-   las fuentes activas, descarga el HTML (`axios` + `cheerio`), normaliza el
-   texto (sin acentos, minúsculas) y busca las palabras clave.
-3. Si encuentra una coincidencia **nueva** (el contenido cambió respecto a la
-   última vez que se detectó una promo en esa fuente), crea un registro en
-   `promotions` y notifica a todos los usuarios con `subscribed = true` por
-   email y/o push (Expo), incluyendo el fragmento detectado y el enlace
-   oficial del banco con las instrucciones.
-4. Los usuarios pueden consultar el historial de promos vía `GET /promotions`.
+   las fuentes activas, descarga el HTML (`axios` + `cheerio`, con reintento),
+   descarta `<script>`/`<style>`/etc., normaliza el texto (sin acentos,
+   minúsculas) y busca las palabras clave.
+3. La huella (`fingerprint`) se calcula **solo sobre los bloques alrededor de
+   la palabra clave** (el bloque que la contiene + los 2 siguientes), no sobre
+   toda la página. Así un banner rotativo, el año del footer o una promo
+   distinta no disparan alertas, pero un cambio de tasa/plazo/vigencia sí.
+4. Si la huella cambió, crea un registro en `promotions` (con tasas y plazos
+   extraídos en `details`) y notifica a los usuarios con `subscribed = true`
+   por email (pool SMTP, máx. 5 en paralelo) y push (Expo, en lotes; los
+   tokens muertos se limpian solos).
+5. Cada fuente guarda su estado (`last_status_code`, `last_error`,
+   `consecutive_failures`) — consulta `GET /admin/sources/health` para ver
+   qué URLs están bloqueadas o rotas.
+6. Los usuarios pueden consultar el historial vía `GET /promotions`.
 
 ## Bancos incluidos en el seed inicial
 
@@ -46,8 +53,9 @@ estructura con el tiempo, ajustables vía la API de administración:
 npm install
 cp .env.example .env   # completa DATABASE_URL, JWT_SECRET, SMTP_*
 npm run migrate
-npm run seed            # carga los bancos y fuentes iniciales
+npm run seed            # carga/actualiza bancos y fuentes (idempotente, no borra historial)
 npm run dev
+npm test                # tests de extracción/detección
 ```
 
 Para probar el scraper manualmente sin esperar el cron:
@@ -64,6 +72,8 @@ npm run scrape
 - `GET /auth/me`
 - `PATCH /auth/me` `{ name, expo_push_token, subscribed }` — `subscribed: false` para darse de baja de las notificaciones
 
+`/auth/register` y `/auth/login` tienen rate limit (20 intentos / 15 min por IP).
+
 ### Bancos (lectura pública, escritura solo admin)
 - `GET /banks`
 - `POST /banks` (admin) `{ name, slug, website_url }`
@@ -75,19 +85,27 @@ npm run scrape
 - `DELETE /banks/:bankId/sources/:sourceId` (admin)
 
 ### Promociones
-- `GET /promotions?limit=50` (requiere sesión) — historial de promos detectadas
+- `GET /promotions?limit=50&bank=<slug>` (requiere sesión) — historial de promos detectadas
+- `GET /promotions/latest` (requiere sesión) — la promo más reciente de cada banco
 
 ### Admin
-- `POST /admin/scrape/run` (admin) — dispara un scrape inmediato de todas las fuentes activas
+- `POST /admin/scrape/run` (admin) — lanza un scrape en segundo plano (`202`; `409` si ya hay uno corriendo)
+- `GET /admin/sources/health` (admin) — estado de cada fuente: último HTTP status, error, fallos consecutivos
 
 Para crear el primer usuario admin: regístralo normalmente vía `/auth/register`
 y luego actualiza su `role` a `'admin'` directamente en la base de datos.
 
 ## Limitaciones conocidas
 
+- **Cron en Render free**: el cron corre dentro del proceso web. Un web
+  service *free* de Render se duerme tras ~15 min sin tráfico, así que el
+  cron **no se ejecuta** mientras duerme. Opciones: plan pagado para el web
+  service, o un Render Cron Job / GitHub Actions programado que ejecute
+  `npm run scrape` (y `RUN_CRON=false` en el web). Además, la Postgres free
+  de Render expira a los 30 días.
 - **Bloqueo de bots**: varios sitios de bancos panameños devuelven `403` a
-  clientes automatizados (WAF/Cloudflare/Akamai). El scraper ya envía un
-  `User-Agent` de navegador (`src/services/scraperService.js`), pero eso no
+  clientes automatizados (WAF/Cloudflare/Akamai). El scraper envía headers de
+  navegador (`src/services/scraperService.js`), pero eso no
   garantiza pasar todos los filtros — si un banco sigue devolviendo `403` en
   producción, revísalo por separado (puede necesitar un navegador headless
   tipo Playwright, o quedar fuera del scraping automático y depender de
