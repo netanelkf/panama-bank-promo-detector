@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Compra de Saldo PA</title>
+    <meta name="description" content="Alertas de promociones de compra de saldo de tarjetas de crédito en bancos de Panamá." />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230f766e'/><rect x='6' y='10' width='20' height='13' rx='2' fill='none' stroke='white' stroke-width='2'/><path d='M6 15h20' stroke='white' stroke-width='2'/></svg>" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#/">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>Compra de Saldo <span class="brand-pa">PA</span></span>
+      </a>
+      <nav id="nav" class="nav" aria-label="Principal"></nav>
+    </header>
+
+    <main id="app" class="container" tabindex="-1">
+      <p class="muted">Cargando…</p>
+    </main>
+
+    <footer class="footer container">
+      <p>
+        Aviso automático basado en el contenido público de los sitios de cada banco. Verifica siempre
+        tasas y condiciones directamente con el banco antes de decidir.
+      </p>
+    </footer>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -1,4 +1,5 @@
 require('dotenv').config();
+const path = require('path');
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
@@ -24,7 +25,8 @@ app.use('/banks', require('./routes/banks'));
 app.use('/promotions', require('./routes/promotions'));
 app.use('/admin', require('./routes/admin'));
 
-app.get('/', (req, res) => res.send('Panama Bank Promo Detector backend running'));
+// Web UI (static, no build step). Hash-based routing, so no SPA fallback needed.
+app.use(express.static(path.join(__dirname, '..', 'public'), { index: 'index.html', maxAge: '1h' }));
 
 app.get('/health', async (req, res) => {
   let dbStatus = 'ok';

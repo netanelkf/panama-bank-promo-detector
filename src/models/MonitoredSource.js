@@ -20,7 +20,10 @@ const MonitoredSource = {
       .join('banks', 'banks.id', `${TABLE}.bank_id`)
       .select(
         `${TABLE}.id`,
+        `${TABLE}.bank_id`,
         `${TABLE}.url`,
+        `${TABLE}.keywords`,
+        `${TABLE}.css_selector`,
         `${TABLE}.active`,
         `${TABLE}.last_checked_at`,
         `${TABLE}.last_success_at`,

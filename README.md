@@ -64,6 +64,20 @@ Para probar el scraper manualmente sin esperar el cron:
 npm run scrape
 ```
 
+## Interfaz web
+
+El mismo servidor sirve una página web en `/` (HTML/CSS/JS plano en
+`public/`, sin paso de build):
+
+- **Inicio** (sin sesión): qué hace el servicio y bancos monitoreados.
+- **Promociones** (con sesión): la detección más reciente de cada banco con
+  tasa y plazo, interruptor para activar/desactivar alertas por email e
+  historial filtrable por banco.
+- **Admin** (`role = 'admin'`): estado de cada fuente (OK / error / 403),
+  botón "Revisar ahora" y edición de URL, palabras clave, selector y estado.
+
+Con `npm run dev` ábrela en http://localhost:3000.
+
 ## API
 
 ### Auth
